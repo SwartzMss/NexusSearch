@@ -1,6 +1,6 @@
 name: Windows portable runtime
 
-on:
+"on":
   push:
     branches: [master]
   pull_request:
@@ -31,7 +31,10 @@ jobs:
           if (-not (Test-Path (Join-Path $portable "settings.yml"))) { throw "settings.yml missing" }
       - name: Create portable archive
         shell: pwsh
-        run: Compress-Archive -Path "$env:RUNNER_TEMP/NexusSearch/*" -DestinationPath "$env:RUNNER_TEMP/NexusSearch-Windows-x64.zip"
+        run: |
+          Compress-Archive `
+            -Path "$env:RUNNER_TEMP/NexusSearch/*" `
+            -DestinationPath "$env:RUNNER_TEMP/NexusSearch-Windows-x64.zip"
       - uses: actions/upload-artifact@v4
         with:
           name: NexusSearch-Windows-x64

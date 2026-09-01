@@ -6,8 +6,10 @@ from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 root = Path(SPECPATH).parent
 searx_datas = collect_data_files("searx", include_py_files=False)
 certifi_datas = collect_data_files("certifi", include_py_files=False)
+engine_sources = [(str(path), "searx/engines") for path in (root / "searx" / "engines").glob("*.py")]
 datas = searx_datas + [
     *certifi_datas,
+    *engine_sources,
     (str(root / "packaging" / "settings.yml"), "."),
     (str(root / "LICENSE"), "."),
     (str(root / "AUTHORS.rst"), "."),
