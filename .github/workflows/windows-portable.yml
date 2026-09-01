@@ -27,6 +27,7 @@ jobs:
         run: |
           $portable = Join-Path $env:RUNNER_TEMP "NexusSearch"
           Copy-Item -Recurse -Force "dist/nexussearch" $portable
+          python packaging/prepare_portable.py $portable
           python packaging/smoke_test.py (Join-Path $portable "nexussearch.exe")
           if (-not (Test-Path (Join-Path $portable "settings.yml"))) { throw "settings.yml missing" }
       - name: Create portable archive

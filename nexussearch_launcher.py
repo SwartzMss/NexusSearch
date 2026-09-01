@@ -17,7 +17,9 @@ def runtime_directory() -> Path:
 
 def configure_environment() -> Path:
     """Point SearXNG at the portable settings file when it is present."""
-    settings_path = runtime_directory() / "settings.yml"
+    base_directory = runtime_directory()
+    candidates = (base_directory / "settings.yml", base_directory / "_internal" / "settings.yml")
+    settings_path = next((path for path in candidates if path.is_file()), candidates[0])
     if settings_path.is_file():
         os.environ["SEARXNG_SETTINGS_PATH"] = str(settings_path)
     os.environ.setdefault("SEARXNG_DISABLE_ETC_SETTINGS", "true")

@@ -56,6 +56,7 @@ To build locally on Windows, install Python 3.12 and run::
 
     python -m pip install -r requirements-windows.txt
     python -m PyInstaller --noconfirm --clean packaging/nexussearch.spec
+    python packaging/prepare_portable.py dist/nexussearch
 
 Connect
 =======
