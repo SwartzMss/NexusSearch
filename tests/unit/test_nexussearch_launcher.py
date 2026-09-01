@@ -17,16 +17,18 @@ class LauncherTestCase(unittest.TestCase):
             settings = Path(temporary_directory) / "settings.yml"
             source.touch()
             settings.touch()
-            with patch.object(nexussearch_launcher, "__file__", str(source)), patch.dict(
-                os.environ, {}, clear=True
+            with (
+                patch.object(nexussearch_launcher, "__file__", str(source)),
+                patch.dict(os.environ, {}, clear=True),
             ):
                 self.assertEqual(nexussearch_launcher.configure_environment(), settings)
                 self.assertEqual(os.environ["SEARXNG_SETTINGS_PATH"], str(settings))
                 self.assertEqual(os.environ["SEARXNG_DISABLE_ETC_SETTINGS"], "true")
 
     def test_runtime_directory_uses_frozen_executable(self):
-        with patch.object(sys, "frozen", True, create=True), patch.object(
-            sys, "executable", "/tmp/NexusSearch/nexussearch.exe"
+        with (
+            patch.object(sys, "frozen", True, create=True),
+            patch.object(sys, "executable", "/tmp/NexusSearch/nexussearch.exe"),
         ):
             self.assertEqual(nexussearch_launcher.runtime_directory(), Path("/tmp/NexusSearch"))
 
@@ -38,8 +40,9 @@ class LauncherTestCase(unittest.TestCase):
             source.touch()
             settings.parent.mkdir()
             settings.touch()
-            with patch.object(nexussearch_launcher, "__file__", str(source)), patch.dict(
-                os.environ, {}, clear=True
+            with (
+                patch.object(nexussearch_launcher, "__file__", str(source)),
+                patch.dict(os.environ, {}, clear=True),
             ):
                 self.assertEqual(nexussearch_launcher.configure_environment(), settings)
                 self.assertEqual(os.environ["SEARXNG_SETTINGS_PATH"], str(settings))

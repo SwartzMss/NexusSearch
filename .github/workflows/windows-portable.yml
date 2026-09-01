@@ -28,6 +28,12 @@ jobs:
           $portable = Join-Path $env:RUNNER_TEMP "NexusSearch"
           Copy-Item -Recurse -Force "dist/nexussearch" $portable
           python packaging/prepare_portable.py $portable
+          $engine_source = Join-Path $portable "_internal/searx/engines/google.py"
+          if (-not (Test-Path $engine_source)) { throw "engine source missing" }
+          foreach ($answerer in @("random.py", "statistics.py")) {
+            $answerer_source = Join-Path $portable "_internal/searx/answerers/$answerer"
+            if (-not (Test-Path $answerer_source)) { throw "answerer source missing: $answerer" }
+          }
           python packaging/smoke_test.py (Join-Path $portable "nexussearch.exe")
           if (-not (Test-Path (Join-Path $portable "settings.yml"))) { throw "settings.yml missing" }
       - name: Create portable archive

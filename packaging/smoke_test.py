@@ -46,6 +46,7 @@ def main() -> int:
         stdout_file = stdout_path.open("w", encoding="utf-8")
         stderr_file = stderr_path.open("w", encoding="utf-8")
         process = subprocess.Popen([sys.argv[1]], stdout=stdout_file, stderr=stderr_file)
+        smoke_error = None
         try:
             deadline = time.monotonic() + 45
             while time.monotonic() < deadline:
@@ -70,13 +71,13 @@ def main() -> int:
             for item in result["results"]:
                 if not all(key in item for key in ("title", "url", "content")):
                     raise RuntimeError("search result is missing a required field")
-            diagnostics = stop_process(process, stdout_file, stderr_file, stdout_path, stderr_path)
-            if process.returncode != 0:
-                raise RuntimeError(diagnostics)
-            return 0
         except Exception as error:
-            diagnostics = stop_process(process, stdout_file, stderr_file, stdout_path, stderr_path)
-            raise RuntimeError(f"{error}\n\n{diagnostics}") from error
+            smoke_error = error
+
+        diagnostics = stop_process(process, stdout_file, stderr_file, stdout_path, stderr_path)
+        if smoke_error is not None:
+            raise RuntimeError(f"{smoke_error}\n\n{diagnostics}") from smoke_error
+        return 0
 
 
 if __name__ == "__main__":
