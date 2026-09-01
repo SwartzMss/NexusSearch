@@ -55,6 +55,16 @@ class SmokeTestCase(unittest.TestCase):
         ):
             self.assertEqual(smoke.main(), 0)
 
+    def test_health_only_skips_search(self):
+        """Health-only mode validates startup without querying search."""
+        process = FakeProcess()
+        with (
+            patch.object(smoke.subprocess, "Popen", return_value=process),
+            patch.object(smoke, "get", return_value=(200, "application/json", b'{"status":"ok"}')),
+            patch.object(sys, "argv", ["smoke_test.py", "nexussearch.exe", "--health-only"]),
+        ):
+            self.assertEqual(smoke.main(), 0)
+
     def test_early_exit_diagnostics(self):
         """An early child exit includes its status and captured output."""
         process = FakeProcess(returncode=7)

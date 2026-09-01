@@ -34,10 +34,16 @@ jobs:
             $answerer_source = Join-Path $portable "_internal/searx/answerers/$answerer"
             if (-not (Test-Path $answerer_source)) { throw "answerer source missing: $answerer" }
           }
+          $executable = Join-Path $portable "nexussearch.exe"
+          $release_settings = Join-Path $portable "settings.yml"
+          if (-not (Test-Path $release_settings)) { throw "settings.yml missing" }
+          Remove-Item Env:SEARXNG_SETTINGS_PATH -ErrorAction SilentlyContinue
+          python packaging/smoke_test.py $executable --health-only
+          if ($LASTEXITCODE -ne 0) { throw "release settings health smoke failed: $LASTEXITCODE" }
           $env:SEARXNG_SETTINGS_PATH = Join-Path $portable "_internal/settings-smoke.yml"
-          python packaging/smoke_test.py (Join-Path $portable "nexussearch.exe")
-          Remove-Item Env:SEARXNG_SETTINGS_PATH
-          if (-not (Test-Path (Join-Path $portable "settings.yml"))) { throw "settings.yml missing" }
+          python packaging/smoke_test.py $executable
+          if ($LASTEXITCODE -ne 0) { throw "deterministic search smoke failed: $LASTEXITCODE" }
+          Remove-Item Env:SEARXNG_SETTINGS_PATH -ErrorAction SilentlyContinue
       - name: Create portable archive
         shell: pwsh
         run: |

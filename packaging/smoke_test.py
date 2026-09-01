@@ -53,8 +53,9 @@ def stop_process(process: subprocess.Popen, stdout_file, stderr_file, stdout_pat
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        raise SystemExit("usage: smoke_test.py PATH_TO_NEXUSSEARCH_EXE")
+    health_only = len(sys.argv) == 3 and sys.argv[2] == "--health-only"
+    if len(sys.argv) not in (2, 3) or (len(sys.argv) == 3 and not health_only):
+        raise SystemExit("usage: smoke_test.py PATH_TO_NEXUSSEARCH_EXE [--health-only]")
     with tempfile.TemporaryDirectory() as temporary_directory:
         stdout_path = Path(temporary_directory) / "stdout.log"
         stderr_path = Path(temporary_directory) / "stderr.log"
@@ -77,10 +78,11 @@ def main() -> int:
             else:
                 raise RuntimeError("NexusSearch did not become healthy")
 
-            status, content_type, body = get("/search?q=NVIDIA&format=json")
-            if status != 200 or content_type != "application/json":
-                raise RuntimeError(f"unexpected search response: {status} {content_type}")
-            validate_search_response(json.loads(body))
+            if not health_only:
+                status, content_type, body = get("/search?q=NVIDIA&format=json")
+                if status != 200 or content_type != "application/json":
+                    raise RuntimeError(f"unexpected search response: {status} {content_type}")
+                validate_search_response(json.loads(body))
         except Exception as error:
             smoke_error = error
 
