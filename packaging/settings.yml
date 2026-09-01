@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+use_default_settings: true
+
+general:
+  debug: false
+  instance_name: "NexusSearch"
+
+search:
+  formats:
+    - html
+    - json
+
+server:
+  bind_address: "127.0.0.1"
+  port: 8788
+  limiter: false
+  public_instance: false
+  image_proxy: false
+  secret_key: "nexussearch-portable-runtime"
+
+valkey:
+  url: false

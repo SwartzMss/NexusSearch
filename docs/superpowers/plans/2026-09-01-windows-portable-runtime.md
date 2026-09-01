@@ -22,7 +22,7 @@
 
 ### Task 2: Portable launcher and default configuration
 
-**Files:** `nexussearch_launcher.py`, `nexussearch/settings.yml`, `tests/unit/test_nexussearch_launcher.py`, `requirements-dev.txt`
+**Files:** `nexussearch_launcher.py`, `packaging/settings.yml`, `tests/unit/test_nexussearch_launcher.py`, `requirements-windows.txt`
 
 - [ ] Write tests for locating a config beside a frozen executable and for setting `SEARXNG_SETTINGS_PATH` before delegating to `searx.webapp.run`.
 - [ ] Implement a launcher that uses `sys.executable` when frozen, its parent otherwise, and calls the existing `run` function.

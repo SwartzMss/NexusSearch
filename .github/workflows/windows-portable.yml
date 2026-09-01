@@ -1,0 +1,38 @@
+name: Windows portable runtime
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    paths:
+      - "nexussearch_launcher.py"
+      - "packaging/**"
+      - "searx/**"
+      - ".github/workflows/windows-portable.yml"
+
+jobs:
+  build-and-smoke:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install runtime and packaging dependencies
+        run: python -m pip install --upgrade pip; python -m pip install -r requirements-windows.txt
+      - name: Build onedir package
+        run: python -m PyInstaller --noconfirm --clean packaging/nexussearch.spec
+      - name: Relocate and smoke-test package
+        shell: pwsh
+        run: |
+          $portable = Join-Path $env:RUNNER_TEMP "NexusSearch"
+          Copy-Item -Recurse -Force "dist/nexussearch" $portable
+          python packaging/smoke_test.py (Join-Path $portable "nexussearch.exe")
+          if (-not (Test-Path (Join-Path $portable "settings.yml"))) { throw "settings.yml missing" }
+      - name: Create portable archive
+        shell: pwsh
+        run: Compress-Archive -Path "$env:RUNNER_TEMP/NexusSearch/*" -DestinationPath "$env:RUNNER_TEMP/NexusSearch-Windows-x64.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NexusSearch-Windows-x64
+          path: ${{ runner.temp }}/NexusSearch-Windows-x64.zip

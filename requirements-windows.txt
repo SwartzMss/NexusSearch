@@ -1,0 +1,3 @@
+# Runtime dependencies used by the portable Windows build.
+-r requirements.txt
+pyinstaller==6.16.0

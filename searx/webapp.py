@@ -594,8 +594,13 @@ def index():
     )
 
 
-@app.route('/healthz', methods=['GET'])
+@app.route('/health', methods=['GET'])
 def health():
+    return jsonify(status='ok')
+
+
+@app.route('/healthz', methods=['GET'])
+def healthz():
     return Response('OK', mimetype='text/plain')
 
 
