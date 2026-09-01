@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
-use_default_settings: true
+use_default_settings:
+  engines:
+    keep_only:
+      - "nexussearch demo"
 
 general:
   debug: false
@@ -20,3 +23,9 @@ server:
 
 valkey:
   url: false
+
+engines:
+  - name: "nexussearch demo"
+    engine: nexussearch_demo
+    shortcut: nsdemo
+    disabled: false

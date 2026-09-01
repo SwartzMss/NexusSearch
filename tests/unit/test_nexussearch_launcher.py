@@ -15,7 +15,7 @@ import nexussearch_launcher
 class LauncherTestCase(unittest.TestCase):
     """Verify launcher path and environment setup."""
 
-    def test_config_uses_adjacent_file(self):
+    def test_adjacent_config(self):
         """Use a settings file next to the launcher source."""
         with tempfile.TemporaryDirectory() as temporary_directory:
             source = Path(temporary_directory) / "launcher.py"
@@ -38,7 +38,7 @@ class LauncherTestCase(unittest.TestCase):
         ):
             self.assertEqual(nexussearch_launcher.runtime_directory(), Path("/tmp/NexusSearch"))
 
-    def test_config_falls_back_to_internal(self):
+    def test_internal_config_fallback(self):
         """Use PyInstaller's internal settings when no root copy exists."""
         with tempfile.TemporaryDirectory() as temporary_directory:
             base = Path(temporary_directory)
@@ -53,3 +53,25 @@ class LauncherTestCase(unittest.TestCase):
             ):
                 self.assertEqual(nexussearch_launcher.configure_environment(), settings)
                 self.assertEqual(os.environ["SEARXNG_SETTINGS_PATH"], str(settings))
+
+    def test_explicit_config_wins(self):
+        """Preserve an explicitly selected smoke configuration."""
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            base = Path(temporary_directory)
+            source = base / "launcher.py"
+            explicit = base / "settings-smoke.yml"
+            adjacent = base / "settings.yml"
+            source.touch()
+            explicit.touch()
+            adjacent.touch()
+            with (
+                patch.object(nexussearch_launcher, "__file__", str(source)),
+                patch.dict(os.environ, {"SEARXNG_SETTINGS_PATH": str(explicit)}, clear=True),
+            ):
+                self.assertEqual(nexussearch_launcher.configure_environment(), explicit)
+                self.assertEqual(os.environ["SEARXNG_SETTINGS_PATH"], str(explicit))
+                self.assertEqual(os.environ["SEARXNG_DISABLE_ETC_SETTINGS"], "true")
+
+
+if __name__ == "__main__":
+    unittest.main()

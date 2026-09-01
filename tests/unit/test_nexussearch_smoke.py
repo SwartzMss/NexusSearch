@@ -37,7 +37,7 @@ class FakeProcess:
 class SmokeTestCase(unittest.TestCase):
     """Verify success and failure handling for the child process."""
 
-    def test_success_ignores_shutdown_code(self):
+    def test_shutdown_code_ignored(self):
         """A test-owned terminate with a nonzero code still means success."""
         process = FakeProcess()
         responses = [
@@ -55,7 +55,7 @@ class SmokeTestCase(unittest.TestCase):
         ):
             self.assertEqual(smoke.main(), 0)
 
-    def test_early_exit_has_diagnostics(self):
+    def test_early_exit_diagnostics(self):
         """An early child exit includes its status and captured output."""
         process = FakeProcess(returncode=7)
         with (
@@ -68,12 +68,12 @@ class SmokeTestCase(unittest.TestCase):
         self.assertIn("stdout:", str(raised.exception))
         self.assertIn("stderr:", str(raised.exception))
 
-    def test_empty_results_are_rejected(self):
+    def test_empty_results_rejected(self):
         """An empty result list does not prove that search works."""
         with self.assertRaisesRegex(RuntimeError, "contains no results"):
             smoke.validate_search_response({"results": []})
 
-    def test_result_requires_engine_metadata(self):
+    def test_engine_metadata_required(self):
         """A result must identify the engine that produced it."""
         result = {"results": [{"title": "t", "url": "u", "content": "c"}]}
         with self.assertRaisesRegex(RuntimeError, "engine metadata"):

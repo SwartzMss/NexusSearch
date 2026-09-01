@@ -13,6 +13,7 @@ datas = searx_datas + [
     *engine_sources,
     *answerer_sources,
     (str(root / "packaging" / "settings.yml"), "."),
+    (str(root / "packaging" / "settings-smoke.yml"), "."),
     (str(root / "LICENSE"), "."),
     (str(root / "AUTHORS.rst"), "."),
 ]

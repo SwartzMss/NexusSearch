@@ -34,7 +34,9 @@ jobs:
             $answerer_source = Join-Path $portable "_internal/searx/answerers/$answerer"
             if (-not (Test-Path $answerer_source)) { throw "answerer source missing: $answerer" }
           }
+          $env:SEARXNG_SETTINGS_PATH = Join-Path $portable "_internal/settings-smoke.yml"
           python packaging/smoke_test.py (Join-Path $portable "nexussearch.exe")
+          Remove-Item Env:SEARXNG_SETTINGS_PATH
           if (-not (Test-Path (Join-Path $portable "settings.yml"))) { throw "settings.yml missing" }
       - name: Create portable archive
         shell: pwsh
