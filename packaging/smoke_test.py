@@ -21,6 +21,21 @@ def get(path: str):
         return response.status, response.headers.get_content_type(), response.read()
 
 
+def validate_search_response(result: object) -> None:
+    """Validate that a search response contains a complete result item."""
+    if not isinstance(result, dict) or not isinstance(result.get("results"), list):
+        raise RuntimeError("search response has no results list")
+    if not result["results"]:
+        raise RuntimeError("search response contains no results")
+    for item in result["results"]:
+        if not isinstance(item, dict):
+            raise RuntimeError("search result is not an object")
+        if not all(item.get(key) for key in ("title", "url", "content")):
+            raise RuntimeError("search result is missing a required field")
+        if not item.get("engine") and not item.get("engines"):
+            raise RuntimeError("search result is missing engine metadata")
+
+
 def stop_process(process: subprocess.Popen, stdout_file, stderr_file, stdout_path: Path, stderr_path: Path) -> str:
     """Stop a child and return its captured diagnostics."""
     if process.poll() is None:
@@ -65,12 +80,7 @@ def main() -> int:
             status, content_type, body = get("/search?q=NVIDIA&format=json")
             if status != 200 or content_type != "application/json":
                 raise RuntimeError(f"unexpected search response: {status} {content_type}")
-            result = json.loads(body)
-            if not isinstance(result, dict) or not isinstance(result.get("results"), list):
-                raise RuntimeError("search response has no results list")
-            for item in result["results"]:
-                if not all(key in item for key in ("title", "url", "content")):
-                    raise RuntimeError("search result is missing a required field")
+            validate_search_response(json.loads(body))
         except Exception as error:
             smoke_error = error
 
