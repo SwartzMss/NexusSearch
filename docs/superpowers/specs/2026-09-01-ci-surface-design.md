@@ -48,4 +48,3 @@ Before opening the implementation PR, validate that:
 2. Integration's matrix contains exactly Python 3.12 and 3.14 and no Theme job.
 3. Workflow YAML parses and passes repository YAML lint where available.
 4. The retained workflow files have no whitespace errors.
-
