@@ -43,6 +43,21 @@ To fine-tune SearXNG, see `Configuration guide`_.
 
 Further information on *how-to* can be found `here <https://docs.searxng.org/admin/index.html>`_.
 
+Windows portable runtime
+========================
+
+The NexusSearch Windows x64 artifact is a PyInstaller ``onedir`` package. Extract
+it and run ``nexussearch.exe``; it starts a localhost service at
+``http://127.0.0.1:8788`` without Docker, WSL, or a system Python installation.
+The adjacent ``settings.yml`` is writable and controls the instance. Health is
+available at ``/health`` and JSON search at ``/search?q=NVIDIA&format=json``.
+
+To build locally on Windows, install Python 3.12 and run::
+
+    python -m pip install -r requirements-windows.txt
+    python -m PyInstaller --noconfirm --clean packaging/nexussearch.spec
+    python packaging/prepare_portable.py dist/nexussearch
+
 Connect
 =======
 

@@ -138,6 +138,13 @@ class ViewsTestCase(SearxTestCase):  # pylint: disable=too-many-public-methods
         self.assertEqual(result_dict['results'][0]['content'], 'first test content')
         self.assertEqual(result_dict['results'][0]['url'], 'http://first.test.xyz')
 
+    def test_search_json_get_api(self):
+        result = self.client.get('/search?q=test&format=json')
+        self.assertEqual(result.status_code, 200)
+        result_dict = result.get_json()
+        self.assertEqual(result_dict['query'], 'test')
+        self.assertEqual(result_dict['results'][0]['engine'], 'startpage')
+
     def test_index_csv(self):
         result = self.client.post('/', data={'q': 'test', 'format': 'csv'})
         self.assertEqual(result.status_code, 308)
@@ -176,6 +183,12 @@ class ViewsTestCase(SearxTestCase):  # pylint: disable=too-many-public-methods
         self.assertIn(b'<h1>Search syntax</h1>', result.data)
 
     def test_health(self):
+        result = self.client.get('/health')
+        self.assertEqual(result.status_code, 200)
+        self.assertEqual(result.get_json(), {'status': 'ok'})
+        self.assertEqual(result.mimetype, 'application/json')
+
+    def test_healthz_compatibility(self):
         result = self.client.get('/healthz')
         self.assertEqual(result.status_code, 200)
         self.assertIn(b'OK', result.data)
