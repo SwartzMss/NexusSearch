@@ -58,7 +58,7 @@ class WindowsReleaseWorkflowTestCase(unittest.TestCase):
         ):
             self.assertIn(required_text, script)
 
-    def test_build_freezes_version_metadata_before_pyinstaller(self):
+    def test_freeze_before_build(self):
         """Both Windows builds freeze version metadata before analysis."""
         for relative_path in (
             ".github/workflows/windows-portable.yml",
@@ -72,7 +72,7 @@ class WindowsReleaseWorkflowTestCase(unittest.TestCase):
             build_index = next(i for i, run in enumerate(run_steps) if "packaging/nexussearch.spec" in run)
             self.assertLess(freeze_index, build_index, relative_path)
 
-    def test_spec_bundles_frozen_version_module(self):
+    def test_frozen_module_in_spec(self):
         """PyInstaller includes the dynamically imported frozen module."""
         spec = read_text("packaging/nexussearch.spec")
         self.assertIn("version_frozen.py", spec)

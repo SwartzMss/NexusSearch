@@ -29,7 +29,7 @@ class PortableSettingsTestCase(unittest.TestCase):
         self.assertEqual(settings["use_default_settings"]["engines"]["keep_only"], ["nexussearch demo"])
         self.assertEqual(settings["engines"][0]["engine"], "nexussearch_demo")
 
-    def test_portable_configs_exclude_tracker_and_preserve_plugins(self):
+    def test_plugins_exclude_tracker(self):
         """Portable configs omit only the plugin that fetches tracker rules."""
         upstream = yaml.safe_load((ROOT / "searx/settings.yml").read_text(encoding="utf-8"))
         expected_plugins = set(upstream["plugins"]) - {TRACKER_PLUGIN}
@@ -37,8 +37,9 @@ class PortableSettingsTestCase(unittest.TestCase):
             settings = yaml.safe_load((ROOT / relative_path).read_text(encoding="utf-8"))
             self.assertEqual(set(settings["plugins"]), expected_plugins, relative_path)
 
-    def test_portable_configs_do_not_initialize_tracker_patterns(self):
+    def test_skip_tracker_init(self):
         """Loading either portable plugin set never initializes tracker rules."""
+        # pylint: disable=import-outside-toplevel
         from searx import data
         from searx.plugins import PluginStorage
 
@@ -50,7 +51,7 @@ class PortableSettingsTestCase(unittest.TestCase):
                 storage.init(Mock())
                 tracker_init.assert_not_called()
 
-    def test_upstream_config_keeps_tracker_url_remover_enabled(self):
+    def test_upstream_tracker_enabled(self):
         """The upstream SearXNG default remains unchanged."""
         settings = yaml.safe_load((ROOT / "searx/settings.yml").read_text(encoding="utf-8"))
         plugin = settings["plugins"]["searx.plugins.tracker_url_remover.SXNGPlugin"]
