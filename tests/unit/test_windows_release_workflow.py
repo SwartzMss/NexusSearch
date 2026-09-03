@@ -68,12 +68,8 @@ class WindowsReleaseWorkflowTestCase(unittest.TestCase):
             job_name = "build-and-smoke" if "build-and-smoke" in workflow["jobs"] else "build-and-release"
             steps = workflow["jobs"][job_name]["steps"]
             run_steps = [step.get("run", "") for step in steps]
-            freeze_index = next(
-                i for i, run in enumerate(run_steps) if "python -m searx.version freeze" in run
-            )
-            build_index = next(
-                i for i, run in enumerate(run_steps) if "packaging/nexussearch.spec" in run
-            )
+            freeze_index = next(i for i, run in enumerate(run_steps) if "python -m searx.version freeze" in run)
+            build_index = next(i for i, run in enumerate(run_steps) if "packaging/nexussearch.spec" in run)
             self.assertLess(freeze_index, build_index, relative_path)
 
     def test_spec_bundles_frozen_version_module(self):
