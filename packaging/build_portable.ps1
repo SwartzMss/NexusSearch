@@ -14,16 +14,23 @@ if (Test-Path $archive) { Remove-Item -Force $archive }
 Copy-Item -Recurse -Force $dist $portable
 python packaging/prepare_portable.py $portable
 
-foreach ($required_path in @(
-    (Join-Path $portable "_internal/searx/engines/google.py"),
-    (Join-Path $portable "_internal/searx/answerers/random.py"),
-    (Join-Path $portable "_internal/searx/answerers/statistics.py"),
-    (Join-Path $portable "settings.yml"),
-    (Join-Path $portable "LICENSE"),
-    (Join-Path $portable "AUTHORS.rst")
-)) {
-    if (-not (Test-Path $required_path)) { throw "required portable file missing: $required_path" }
+function Assert-PortableFile {
+    param(
+        [string]$Description,
+        [string[]]$RelativePaths
+    )
+    foreach ($relative_path in $RelativePaths) {
+        if (Test-Path (Join-Path $portable $relative_path)) { return }
+    }
+    throw "required portable $Description missing: $($RelativePaths -join ', ')"
 }
+
+Assert-PortableFile "Google engine" @("_internal/searx/engines/google.py")
+Assert-PortableFile "random answerer" @("_internal/searx/answerers/random.py")
+Assert-PortableFile "statistics answerer" @("_internal/searx/answerers/statistics.py")
+Assert-PortableFile "settings" @("settings.yml", "_internal/settings.yml")
+Assert-PortableFile "license" @("LICENSE", "_internal/LICENSE")
+Assert-PortableFile "provenance" @("AUTHORS.rst", "_internal/AUTHORS.rst")
 
 $executable = Join-Path $portable "nexussearch.exe"
 Remove-Item Env:SEARXNG_SETTINGS_PATH -ErrorAction SilentlyContinue

@@ -53,6 +53,8 @@ class WindowsReleaseWorkflowTestCase(unittest.TestCase):
             "_internal/searx/engines/google.py",
             "LICENSE",
             "AUTHORS.rst",
+            "_internal/LICENSE",
+            "_internal/AUTHORS.rst",
         ):
             self.assertIn(required_text, script)
 
