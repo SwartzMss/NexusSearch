@@ -20,6 +20,8 @@ PROHIBITED_STARTUP_DIAGNOSTICS = (
     "Error while getting the git URL & branch:",
     "rules1.clearurls.xyz/data.minify.json",
     "TRACKER_PATTERNS: HTTPError",
+    "TRACKER_PATTERNS: ClearURL ignore HTTP",
+    "TRACKER_PATTERNS: failed fetching ClearURL rule lists",
 )
 
 

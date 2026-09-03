@@ -4,11 +4,14 @@
 
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 import yaml
 
 
 ROOT = Path(__file__).parents[2]
+TRACKER_PLUGIN = "searx.plugins.tracker_url_remover.SXNGPlugin"
+PORTABLE_SETTINGS = ("packaging/settings.yml", "packaging/settings-smoke.yml")
 
 
 class PortableSettingsTestCase(unittest.TestCase):
@@ -26,11 +29,26 @@ class PortableSettingsTestCase(unittest.TestCase):
         self.assertEqual(settings["use_default_settings"]["engines"]["keep_only"], ["nexussearch demo"])
         self.assertEqual(settings["engines"][0]["engine"], "nexussearch_demo")
 
-    def test_release_config_disables_tracker_url_remover(self):
-        """The portable config skips the external tracker-rule fetch."""
-        settings = yaml.safe_load((ROOT / "packaging/settings.yml").read_text(encoding="utf-8"))
-        plugin = settings["plugins"]["searx.plugins.tracker_url_remover.SXNGPlugin"]
-        self.assertFalse(plugin["active"])
+    def test_portable_configs_exclude_tracker_and_preserve_plugins(self):
+        """Portable configs omit only the plugin that fetches tracker rules."""
+        upstream = yaml.safe_load((ROOT / "searx/settings.yml").read_text(encoding="utf-8"))
+        expected_plugins = set(upstream["plugins"]) - {TRACKER_PLUGIN}
+        for relative_path in PORTABLE_SETTINGS:
+            settings = yaml.safe_load((ROOT / relative_path).read_text(encoding="utf-8"))
+            self.assertEqual(set(settings["plugins"]), expected_plugins, relative_path)
+
+    def test_portable_configs_do_not_initialize_tracker_patterns(self):
+        """Loading either portable plugin set never initializes tracker rules."""
+        from searx import data
+        from searx.plugins import PluginStorage
+
+        for relative_path in PORTABLE_SETTINGS:
+            settings = yaml.safe_load((ROOT / relative_path).read_text(encoding="utf-8"))
+            storage = PluginStorage()
+            with patch.object(data.TRACKER_PATTERNS, "init") as tracker_init:
+                storage.load_settings(settings["plugins"])
+                storage.init(Mock())
+                tracker_init.assert_not_called()
 
     def test_upstream_config_keeps_tracker_url_remover_enabled(self):
         """The upstream SearXNG default remains unchanged."""

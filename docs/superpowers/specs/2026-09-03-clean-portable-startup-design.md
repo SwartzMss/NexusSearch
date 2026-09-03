@@ -12,15 +12,21 @@ When a developer runs the source tree without freezing metadata, the existing Se
 
 ## Portable configuration
 
-Only `packaging/settings.yml` will override the upstream plugin configuration:
+The two portable configurations, `packaging/settings.yml` and
+`packaging/settings-smoke.yml`, will preserve the upstream plugin entries except
+for the tracker URL remover, which is deliberately omitted:
 
 ```yaml
 plugins:
-  searx.plugins.tracker_url_remover.SXNGPlugin:
-    active: false
+  # Keep the upstream plugin entries here, but omit tracker_url_remover.
 ```
 
-`searx/settings.yml` will remain untouched. Portable startup will therefore avoid initializing `TRACKER_PATTERNS` and fetching ClearURLs rules, while ordinary SearXNG installations retain their current defaults.
+`searx/settings.yml` will remain untouched. Because SearXNG replaces the
+`plugins` mapping when a user configuration supplies it, both portable files
+must list the other upstream plugins explicitly to preserve their behavior.
+Omitting tracker_url_remover means portable startup never constructs or
+initializes it, so it avoids fetching ClearURLs rules while ordinary SearXNG
+installations retain their current defaults.
 
 ## Smoke and regression coverage
 
@@ -28,7 +34,8 @@ The existing portable smoke will continue to validate HTTP 200 JSON responses fr
 
 Unit tests will verify:
 
-- portable settings explicitly disable the tracker URL remover;
+- portable settings preserve the upstream plugin set except for tracker URL remover;
+- loading either portable plugin set does not call `TRACKER_PATTERNS.init()`;
 - the upstream settings file remains unchanged at that setting;
 - both Windows workflows freeze version metadata before building;
 - the PyInstaller spec includes the generated frozen module;
@@ -38,7 +45,7 @@ The test suite will not contact the ClearURLs endpoint.
 
 ## Error handling
 
-The freeze step fails the Windows build if metadata generation fails. The spec only references the frozen module when it exists, preserving source-tree builds that have not run freeze. Portable smoke treats any prohibited startup diagnostic as a failure and reports the full child-process logs for diagnosis.
+The freeze step fails the Windows build if metadata generation fails. The spec only references the frozen module when it exists, preserving source-tree builds that have not run freeze. Portable smoke treats Git lookup errors and all ClearURLs fetch failure variants as prohibited diagnostics and reports the full child-process logs for diagnosis.
 
 ## Acceptance criteria
 

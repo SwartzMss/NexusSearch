@@ -4,28 +4,44 @@
 
 **Goal:** Make the Windows PyInstaller portable runtime use bundled SearXNG version metadata, skip the unnecessary tracker-rule fetch, and prove clean startup without changing the NexusSearch HTTP contract.
 
-**Architecture:** The Windows workflows generate `searx/version_frozen.py` immediately before PyInstaller. The spec explicitly includes that dynamic-import module when present, while `packaging/settings.yml` disables only the portable tracker URL remover. The existing relocated portable smoke gains deterministic log assertions in addition to its `/health` and JSON `/search` checks.
+**Architecture:** The Windows workflows generate `searx/version_frozen.py` immediately before PyInstaller. The spec explicitly includes that dynamic-import module when present, while both portable settings files preserve the upstream plugin set except for the omitted tracker URL remover. The existing relocated portable smoke gains deterministic log assertions in addition to its `/health` and JSON `/search` checks.
 
 **Tech Stack:** Python 3.10/3.12, unittest/nose2, PyYAML, PyInstaller, GitHub Actions YAML, PowerShell.
 
 ---
 
-### Task 1: Add regression tests for the portable configuration
+### Task 1: Add regression tests for the portable configurations
 
 **Files:**
 - Modify: `tests/unit/test_portable_settings.py`
-- Test target: `packaging/settings.yml` and `searx/settings.yml`
+- Test target: `packaging/settings.yml`, `packaging/settings-smoke.yml`, and `searx/settings.yml`
 
 - [ ] **Step 1: Write the failing tests**
 
 Add these methods to `PortableSettingsTestCase`:
 
 ```python
-    def test_release_config_disables_tracker_url_remover(self):
-        """The portable config skips the external tracker-rule fetch."""
-        settings = yaml.safe_load((ROOT / "packaging/settings.yml").read_text(encoding="utf-8"))
-        plugin = settings["plugins"]["searx.plugins.tracker_url_remover.SXNGPlugin"]
-        self.assertFalse(plugin["active"])
+    def test_portable_configs_exclude_tracker_and_preserve_plugins(self):
+        """Portable configs omit only the plugin that fetches tracker rules."""
+        upstream = yaml.safe_load((ROOT / "searx/settings.yml").read_text(encoding="utf-8"))
+        tracker_plugin = "searx.plugins.tracker_url_remover.SXNGPlugin"
+        expected_plugins = set(upstream["plugins"]) - {tracker_plugin}
+        for relative_path in ("packaging/settings.yml", "packaging/settings-smoke.yml"):
+            settings = yaml.safe_load((ROOT / relative_path).read_text(encoding="utf-8"))
+            self.assertEqual(set(settings["plugins"]), expected_plugins, relative_path)
+
+    def test_portable_configs_do_not_initialize_tracker_patterns(self):
+        """Loading either portable plugin set never initializes tracker rules."""
+        from searx import data
+        from searx.plugins import PluginStorage
+
+        for relative_path in ("packaging/settings.yml", "packaging/settings-smoke.yml"):
+            settings = yaml.safe_load((ROOT / relative_path).read_text(encoding="utf-8"))
+            storage = PluginStorage()
+            with patch.object(data.TRACKER_PATTERNS, "init") as tracker_init:
+                storage.load_settings(settings["plugins"])
+                storage.init(Mock())
+                tracker_init.assert_not_called()
 
     def test_upstream_config_keeps_tracker_url_remover_enabled(self):
         """The upstream SearXNG default remains unchanged."""
@@ -42,28 +58,50 @@ Run:
 PYTHONPATH=. .venv/bin/python -m nose2 -v tests.unit.test_portable_settings
 ```
 
-Expected: the existing two tests pass and `test_release_config_disables_tracker_url_remover` fails with a missing `plugins` key, proving the release configuration has not yet implemented the requirement. The upstream-preservation test passes.
+Expected: the existing two tests pass; the plugin-set test fails because the portable files do not yet list the upstream plugins, and the no-initialization test fails because the current release config still includes the tracker entry.
 
 - [ ] **Step 3: Implement the minimal configuration change**
 
-Append this to `packaging/settings.yml`:
+Set the `plugins` mapping in both portable files to the upstream entries from
+`searx/settings.yml`, excluding only the tracker URL remover. Preserve every
+other plugin entry and its existing `active` value, and add a comment explaining
+that the tracker entry is deliberately omitted.
 
 ```yaml
 plugins:
-  searx.plugins.tracker_url_remover.SXNGPlugin:
+  searx.plugins.calculator.SXNGPlugin:
+    active: true
+  searx.plugins.infinite_scroll.SXNGPlugin:
     active: false
+  searx.plugins.hash_plugin.SXNGPlugin:
+    active: true
+  searx.plugins.self_info.SXNGPlugin:
+    active: true
+  searx.plugins.unit_converter.SXNGPlugin:
+    active: true
+  searx.plugins.ahmia_filter.SXNGPlugin:
+    active: true
+  searx.plugins.hostnames.SXNGPlugin:
+    active: true
+  searx.plugins.time_zone.SXNGPlugin:
+    active: true
+  searx.plugins.oa_doi_rewrite.SXNGPlugin:
+    active: false
+  searx.plugins.tor_check.SXNGPlugin:
+    active: false
+  # omit searx.plugins.tracker_url_remover.SXNGPlugin
 ```
 
 Do not edit `searx/settings.yml`.
 
 - [ ] **Step 4: Run the focused tests and verify they pass**
 
-Run the same nose2 command. Expected: 4 tests pass with zero failures.
+Run the same nose2 command. Expected: 5 tests pass with zero failures.
 
 - [ ] **Step 5: Commit the task**
 
 ```bash
-git add packaging/settings.yml tests/unit/test_portable_settings.py
+git add packaging/settings.yml packaging/settings-smoke.yml tests/unit/test_portable_settings.py
 git commit -m "fix: disable tracker fetch in portable settings"
 ```
 
@@ -221,6 +259,8 @@ PROHIBITED_STARTUP_DIAGNOSTICS = (
     "Error while getting the git URL & branch:",
     "rules1.clearurls.xyz/data.minify.json",
     "TRACKER_PATTERNS: HTTPError",
+    "TRACKER_PATTERNS: ClearURL ignore HTTP",
+    "TRACKER_PATTERNS: failed fetching ClearURL rule lists",
 )
 
 
@@ -269,7 +309,7 @@ Run:
 PYTHONPATH=. .venv/bin/python -m nose2 -v tests.unit.test_portable_settings tests.unit.test_nexussearch_launcher tests.unit.test_nexussearch_smoke tests.unit.test_windows_release_workflow
 ```
 
-Expected: all tests pass with zero failures and errors.
+Expected: 23 tests pass with zero failures and errors.
 
 - [ ] **Step 2: Run the broader unit suite**
 

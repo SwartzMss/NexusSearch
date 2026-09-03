@@ -102,6 +102,16 @@ class SmokeTestCase(unittest.TestCase):
                 "(https://rules1.clearurls.xyz/data.minify.json) occured while fetching Timeout"
             )
 
+    def test_all_clearurls_failure_diagnostics_are_rejected(self):
+        """Every ClearURLs fallback failure is treated as a startup regression."""
+        for diagnostic in (
+            "TRACKER_PATTERNS: ClearURL ignore HTTP 503",
+            "TRACKER_PATTERNS: failed fetching ClearURL rule lists",
+        ):
+            with self.subTest(diagnostic=diagnostic):
+                with self.assertRaisesRegex(RuntimeError, "prohibited diagnostic"):
+                    smoke.validate_startup_diagnostics(diagnostic)
+
     def test_clean_startup_diagnostics_are_accepted(self):
         """Unrelated normal output is not rejected by the startup guard."""
         smoke.validate_startup_diagnostics("INFO:searx: version: 0.1.0\n")
