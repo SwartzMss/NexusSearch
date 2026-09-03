@@ -98,7 +98,8 @@ class SmokeTestCase(unittest.TestCase):
         """Portable startup must not fetch ClearURLs rules."""
         with self.assertRaisesRegex(RuntimeError, "rules1.clearurls.xyz"):
             smoke.validate_startup_diagnostics(
-                "TRACKER_PATTERNS: HTTPError (https://rules1.clearurls.xyz/data.minify.json) occured while fetching Timeout"
+                "TRACKER_PATTERNS: HTTPError "
+                "(https://rules1.clearurls.xyz/data.minify.json) occured while fetching Timeout"
             )
 
     def test_clean_startup_diagnostics_are_accepted(self):
