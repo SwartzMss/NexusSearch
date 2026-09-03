@@ -22,7 +22,7 @@ def load_workflow(relative_path: str) -> dict:
 class WindowsReleaseWorkflowTestCase(unittest.TestCase):
     """Keep development and release workflows on the same package contract."""
 
-    def test_development_workflow_uses_shared_packager(self):
+    def test_shared_packager(self):
         workflow = read_text(".github/workflows/windows-portable.yml")
         self.assertIn("pwsh packaging/build_portable.ps1", workflow)
         self.assertNotIn("Compress-Archive", workflow)
@@ -30,7 +30,7 @@ class WindowsReleaseWorkflowTestCase(unittest.TestCase):
         self.assertNotIn("gh release create", workflow)
         self.assertNotIn("contents: write", workflow)
 
-    def test_release_workflow_is_tag_only_and_can_publish(self):
+    def test_tag_release_contract(self):
         workflow = load_workflow(".github/workflows/windows-release.yml")
         self.assertEqual(workflow["on"], {"push": {"tags": ["v*"]}})
         self.assertEqual(workflow["permissions"], {"contents": "write"})
@@ -42,7 +42,7 @@ class WindowsReleaseWorkflowTestCase(unittest.TestCase):
         self.assertIn("SHA256SUMS.txt", steps)
         self.assertIn("gh release create", steps)
 
-    def test_packager_contains_shared_runtime_checks(self):
+    def test_packager_runtime_checks(self):
         script = read_text("packaging/build_portable.ps1")
         for required_text in (
             "prepare_portable.py",
