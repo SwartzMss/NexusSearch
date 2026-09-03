@@ -17,11 +17,13 @@ datas = searx_datas + [
     (str(root / "LICENSE"), "."),
     (str(root / "AUTHORS.rst"), "."),
 ]
-hiddenimports = (
-    collect_submodules("searx.engines")
-    + collect_submodules("searx.answerers")
-    + collect_submodules("searx.plugins")
-)
+hiddenimports = [
+    *collect_submodules("searx.engines"),
+    *collect_submodules("searx.answerers"),
+    *collect_submodules("searx.plugins"),
+]
+if (root / "searx" / "version_frozen.py").is_file():
+    hiddenimports.append("searx.version_frozen")
 
 a = Analysis(
     [str(root / "nexussearch_launcher.py")],
