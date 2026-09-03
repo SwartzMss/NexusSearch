@@ -58,6 +58,14 @@ To build locally on Windows, install Python 3.12 and run::
     python -m PyInstaller --noconfirm --clean packaging/nexussearch.spec
     python packaging/prepare_portable.py dist/nexussearch
 
+Tagged releases
+---------------
+
+Version tags such as ``v0.1.0`` publish an immutable GitHub Release containing
+``NexusSearch-Windows-x64.zip`` and ``SHA256SUMS.txt``. Downstream consumers
+can pin the tag, download the fixed ZIP asset, and verify its SHA256 digest
+before unpacking the portable runtime.
+
 Connect
 =======
 

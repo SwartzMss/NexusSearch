@@ -1,0 +1,51 @@
+name: Windows portable release
+
+"on":
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install runtime and packaging dependencies
+        run: python -m pip install --upgrade pip; python -m pip install -r requirements-windows.txt
+      - name: Verify tagged commit
+        shell: pwsh
+        run: |
+          $tag_commit = (git rev-list -n 1 "$env:GITHUB_REF_NAME").Trim()
+          $checkout_commit = (git rev-parse HEAD).Trim()
+          if ($tag_commit -ne $checkout_commit) { throw "checkout is not the tagged commit" }
+      - name: Build onedir package
+        run: python -m PyInstaller --noconfirm --clean packaging/nexussearch.spec
+      - name: Relocate, smoke-test, and archive package
+        shell: pwsh
+        run: pwsh packaging/build_portable.ps1
+      - name: Create SHA256 checksum
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP "NexusSearch-Windows-x64.zip"
+          $checksums = Join-Path $env:RUNNER_TEMP "SHA256SUMS.txt"
+          $hash = (Get-FileHash -Algorithm SHA256 $archive).Hash.ToLowerInvariant()
+          "$hash  NexusSearch-Windows-x64.zip" | Set-Content -Encoding ascii $checksums
+      - name: Create GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$env:GITHUB_REF_NAME" `
+            --repo "$env:GITHUB_REPOSITORY" `
+            --title "$env:GITHUB_REF_NAME" `
+            --generate-notes `
+            "$env:RUNNER_TEMP/NexusSearch-Windows-x64.zip" `
+            "$env:RUNNER_TEMP/SHA256SUMS.txt"
