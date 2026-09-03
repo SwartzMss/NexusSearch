@@ -58,6 +58,30 @@ class WindowsReleaseWorkflowTestCase(unittest.TestCase):
         ):
             self.assertIn(required_text, script)
 
+    def test_build_freezes_version_metadata_before_pyinstaller(self):
+        """Both Windows builds freeze version metadata before analysis."""
+        for relative_path in (
+            ".github/workflows/windows-portable.yml",
+            ".github/workflows/windows-release.yml",
+        ):
+            workflow = load_workflow(relative_path)
+            job_name = "build-and-smoke" if "build-and-smoke" in workflow["jobs"] else "build-and-release"
+            steps = workflow["jobs"][job_name]["steps"]
+            run_steps = [step.get("run", "") for step in steps]
+            freeze_index = next(
+                i for i, run in enumerate(run_steps) if "python -m searx.version freeze" in run
+            )
+            build_index = next(
+                i for i, run in enumerate(run_steps) if "packaging/nexussearch.spec" in run
+            )
+            self.assertLess(freeze_index, build_index, relative_path)
+
+    def test_spec_bundles_frozen_version_module(self):
+        """PyInstaller includes the dynamically imported frozen module."""
+        spec = read_text("packaging/nexussearch.spec")
+        self.assertIn("version_frozen.py", spec)
+        self.assertIn("searx.version_frozen", spec)
+
 
 if __name__ == "__main__":
     unittest.main()
