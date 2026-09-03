@@ -26,6 +26,8 @@ jobs:
           $tag_commit = (git rev-list -n 1 "$env:GITHUB_REF_NAME").Trim()
           $checkout_commit = (git rev-parse HEAD).Trim()
           if ($tag_commit -ne $checkout_commit) { throw "checkout is not the tagged commit" }
+      - name: Freeze runtime version metadata
+        run: python -m searx.version freeze
       - name: Build onedir package
         run: python -m PyInstaller --noconfirm --clean packaging/nexussearch.spec
       - name: Relocate, smoke-test, and archive package
