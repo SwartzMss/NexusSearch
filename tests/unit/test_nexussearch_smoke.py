@@ -89,6 +89,22 @@ class SmokeTestCase(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "engine metadata"):
             smoke.validate_search_response(result)
 
+    def test_prohibited_git_diagnostic_is_rejected(self):
+        """Portable startup must not invoke Git from outside a checkout."""
+        with self.assertRaisesRegex(RuntimeError, "not a git repository"):
+            smoke.validate_startup_diagnostics("fatal: not a git repository")
+
+    def test_prohibited_clearurls_diagnostic_is_rejected(self):
+        """Portable startup must not fetch ClearURLs rules."""
+        with self.assertRaisesRegex(RuntimeError, "rules1.clearurls.xyz"):
+            smoke.validate_startup_diagnostics(
+                "TRACKER_PATTERNS: HTTPError (https://rules1.clearurls.xyz/data.minify.json) occured while fetching Timeout"
+            )
+
+    def test_clean_startup_diagnostics_are_accepted(self):
+        """Unrelated normal output is not rejected by the startup guard."""
+        smoke.validate_startup_diagnostics("INFO:searx: version: 0.1.0\n")
+
 
 if __name__ == "__main__":
     unittest.main()

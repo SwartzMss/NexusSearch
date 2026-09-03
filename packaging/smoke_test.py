@@ -14,6 +14,13 @@ from urllib.request import urlopen
 
 
 BASE_URL = "http://127.0.0.1:8788"
+PROHIBITED_STARTUP_DIAGNOSTICS = (
+    "not a git repository",
+    "Error while getting the version:",
+    "Error while getting the git URL & branch:",
+    "rules1.clearurls.xyz/data.minify.json",
+    "TRACKER_PATTERNS: HTTPError",
+)
 
 
 def get(path: str):
@@ -34,6 +41,13 @@ def validate_search_response(result: object) -> None:
             raise RuntimeError("search result is missing a required field")
         if not item.get("engine") and not item.get("engines"):
             raise RuntimeError("search result is missing engine metadata")
+
+
+def validate_startup_diagnostics(diagnostics: str) -> None:
+    """Reject expected Git and ClearURLs failures from a portable startup."""
+    for diagnostic in PROHIBITED_STARTUP_DIAGNOSTICS:
+        if diagnostic in diagnostics:
+            raise RuntimeError(f"portable startup emitted prohibited diagnostic: {diagnostic}")
 
 
 def stop_process(process: subprocess.Popen, stdout_file, stderr_file, stdout_path: Path, stderr_path: Path) -> str:
@@ -87,6 +101,11 @@ def main() -> int:
             smoke_error = error
 
         diagnostics = stop_process(process, stdout_file, stderr_file, stdout_path, stderr_path)
+        if smoke_error is None:
+            try:
+                validate_startup_diagnostics(diagnostics)
+            except RuntimeError as error:
+                smoke_error = error
         if smoke_error is not None:
             raise RuntimeError(f"{smoke_error}\n\n{diagnostics}") from smoke_error
         return 0
