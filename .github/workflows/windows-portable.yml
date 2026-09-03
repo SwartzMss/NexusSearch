@@ -22,34 +22,9 @@ jobs:
         run: python -m pip install --upgrade pip; python -m pip install -r requirements-windows.txt
       - name: Build onedir package
         run: python -m PyInstaller --noconfirm --clean packaging/nexussearch.spec
-      - name: Relocate and smoke-test package
+      - name: Relocate, smoke-test, and archive package
         shell: pwsh
-        run: |
-          $portable = Join-Path $env:RUNNER_TEMP "NexusSearch"
-          Copy-Item -Recurse -Force "dist/nexussearch" $portable
-          python packaging/prepare_portable.py $portable
-          $engine_source = Join-Path $portable "_internal/searx/engines/google.py"
-          if (-not (Test-Path $engine_source)) { throw "engine source missing" }
-          foreach ($answerer in @("random.py", "statistics.py")) {
-            $answerer_source = Join-Path $portable "_internal/searx/answerers/$answerer"
-            if (-not (Test-Path $answerer_source)) { throw "answerer source missing: $answerer" }
-          }
-          $executable = Join-Path $portable "nexussearch.exe"
-          $release_settings = Join-Path $portable "settings.yml"
-          if (-not (Test-Path $release_settings)) { throw "settings.yml missing" }
-          Remove-Item Env:SEARXNG_SETTINGS_PATH -ErrorAction SilentlyContinue
-          python packaging/smoke_test.py $executable --health-only
-          if ($LASTEXITCODE -ne 0) { throw "release settings health smoke failed: $LASTEXITCODE" }
-          $env:SEARXNG_SETTINGS_PATH = Join-Path $portable "_internal/settings-smoke.yml"
-          python packaging/smoke_test.py $executable
-          if ($LASTEXITCODE -ne 0) { throw "deterministic search smoke failed: $LASTEXITCODE" }
-          Remove-Item Env:SEARXNG_SETTINGS_PATH -ErrorAction SilentlyContinue
-      - name: Create portable archive
-        shell: pwsh
-        run: |
-          Compress-Archive `
-            -Path "$env:RUNNER_TEMP/NexusSearch/*" `
-            -DestinationPath "$env:RUNNER_TEMP/NexusSearch-Windows-x64.zip"
+        run: pwsh packaging/build_portable.ps1
       - uses: actions/upload-artifact@v4
         with:
           name: NexusSearch-Windows-x64
